@@ -211,5 +211,5 @@ buildKeys();
 render();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !import.meta.env.DEV) {
-  navigator.serviceWorker.register('/sw.js').catch(() => { /* offline cache is optional */ });
+  navigator.serviceWorker.register('./sw.js').catch(() => { /* offline cache is optional */ });
 }
