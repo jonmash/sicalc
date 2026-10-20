@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SI Calc</string>
+    <string name="title_activity_main">SI Calc</string>
+    <string name="package_name">com.mashengineering.sicalc</string>
+    <string name="custom_url_scheme">com.mashengineering.sicalc</string>
+</resources>

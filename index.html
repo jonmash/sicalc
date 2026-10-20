@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#14171c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="SI Calc" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/icon-180.png" />
+  <title>SI Calc</title>
+</head>
+<body>
+  <div id="app">
+    <section id="display">
+      <div id="status"><span id="ind-shift"></span><span id="ind-angle"></span><button id="menu-btn" aria-label="Settings">&#9881;</button></div>
+      <div id="expr" aria-label="Expression"></div>
+      <div id="result" aria-live="polite" title="Tap to switch Norm / Eng"></div>
+    </section>
+    <section id="keys"></section>
+  </div>
+
+  <div id="menu" hidden>
+    <div class="sheet">
+      <h2>Settings</h2>
+      <div class="row"><span>Angle</span><div class="seg" data-setting="angle"><button data-v="deg">Deg</button><button data-v="rad">Rad</button></div></div>
+      <div class="row"><span>Result format</span><div class="seg" data-setting="out"><button data-v="norm">Norm</button><button data-v="eng">Eng (SI)</button></div></div>
+      <p class="hint">Tip: tap the result to flip between Norm and Eng.<br>Tap in the expression to move the cursor.</p>
+      <button id="menu-close">Done</button>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
