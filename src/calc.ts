@@ -19,14 +19,24 @@ const FUNCS = new Set([
 ]);
 
 export class CalcError extends Error {
-  constructor(public kind: 'Syntax Error' | 'Math Error') { super(kind); }
+  constructor(public kind: 'Syntax Error' | 'Math Error' | 'Stack Error') { super(kind); }
 }
 
 export interface Ctx { angle: AngleMode; ans: number; }
 
 const isDigit = (t: Token | undefined) => t !== undefined && /^[0-9]$/.test(t);
 
+/** Evaluate a token list. Pathologically deep nesting reports 'Stack Error' instead of crashing. */
 export function evaluate(tokens: Token[], ctx: Ctx): number {
+  try {
+    return evaluateTokens(tokens, ctx);
+  } catch (e) {
+    if (e instanceof RangeError) throw new CalcError('Stack Error');
+    throw e;
+  }
+}
+
+function evaluateTokens(tokens: Token[], ctx: Ctx): number {
   let i = 0;
   const peek = () => tokens[i];
   const syntax = () => new CalcError('Syntax Error');
@@ -43,7 +53,8 @@ export function evaluate(tokens: Token[], ctx: Ctx): number {
       if (kind === 'cos') { if (r === 90 || r === 270) return 0; if (r === 0) return 1; if (r === 180) return -1; }
       if (kind === 'tan') { if (r % 180 === 0) return 0; if (r % 180 === 90) throw math(); }
     }
-    const a = toRad(x);
+    // Reduce first (fmod is exact) so large angles keep their precision: sin(1e15+30°) = 0.5.
+    const a = ctx.angle === 'deg' ? (((x % 360) + 360) % 360 * Math.PI) / 180 : x;
     return kind === 'sin' ? Math.sin(a) : kind === 'cos' ? Math.cos(a) : Math.tan(a);
   }
 
@@ -60,24 +71,31 @@ export function evaluate(tokens: Token[], ctx: Ctx): number {
   const startsPrimary = (t: Token | undefined) =>
     t !== undefined && (isDigit(t) || t === '.' || t === 'pi' || t === 'e' || t === 'ans' || t === '(' || FUNCS.has(t));
 
-  // term: * / || and implicit multiplication, all left-to-right at one level.
-  function term(): number {
+  // implicit: 2pi, 3(4), 2sin(x), (1+2)(3+4). Binds tighter than * / and parallel,
+  // so 1/2pi = 1/(2*pi) (Casio FX-991 behaviour).
+  function implicit(): number {
     let v = unary();
+    while (startsPrimary(peek())) v = v * unary();
+    return v;
+  }
+
+  // term: * / and parallel, left-to-right; operands are implicit products.
+  function term(): number {
+    let v = implicit();
     for (;;) {
       const t = peek();
-      if (t === '*') { i++; v = v * unary(); }
+      if (t === '*') { i++; v = v * implicit(); }
       else if (t === '/') {
         i++;
-        const d = unary();
+        const d = implicit();
         if (d === 0) throw math();
         v = v / d;
       } else if (t === 'par') {
         i++;
-        const r = unary();
+        const r = implicit();
         if (v + r === 0) throw math();
         v = (v * r) / (v + r);
-      } else if (startsPrimary(t)) { v = v * unary(); } // implicit: 2pi, 3(4), 2sin(x)
-      else return v;
+      } else return v;
     }
   }
 
@@ -211,7 +229,8 @@ function sci(x: number): { mant: string; exp: number } {
 }
 
 export function formatResult(x: number, mode: OutputMode): string {
-  const v = round10(x);
+  let v = round10(x);
+  if (!Number.isFinite(v)) v = x; // x within rounding distance of Number.MAX_VALUE
   if (v === 0) return '0';
   const { exp } = sci(v);
   if (mode === 'eng') {
