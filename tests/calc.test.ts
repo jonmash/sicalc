@@ -104,6 +104,14 @@ describe('functions', () => {
     expect(ev('{sqrt}16)')).toBe(4);
     expect(ev('{sqrt}16)+1')).toBe(5);
   });
+  it('exp suffix after Ans, constants and groups', () => {
+    expect(ev('{ans}E2', 'deg', 5)).toBe(500);
+    expect(ev('{ans}E-2', 'deg', 5)).toBe(0.05);
+    expect(ev('(1+2)E2')).toBe(300);
+    close(ev('{pi}E1'), Math.PI * 10);
+    expect(() => ev('{ans}E', 'deg', 5)).toThrow(CalcError);
+  });
+
   it('ans', () => {
     expect(ev('{ans}*2', 'deg', 21)).toBe(42);
   });

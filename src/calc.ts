@@ -118,17 +118,23 @@ export function evaluate(tokens: Token[], ctx: Ctx): number {
     if ((s.match(/\./g) ?? []).length > 1 || s === '.') throw syntax();
     const t = peek();
     if (t !== undefined && t in SI) { i++; return parseFloat(`${s}e${SI[t]}`); }
-    if (t === 'E') {
-      i++;
-      let sign = '';
-      if (peek() === '-') { sign = '-'; i++; }
-      let d = '';
-      while (isDigit(peek())) d += tokens[i++];
-      if (d === '') throw syntax();
-      return parseFloat(`${s}e${sign}${d}`);
-    }
+    if (t === 'E') return parseFloat(`${s}e${expValue()}`);
     return parseFloat(s);
   }
+
+  // ×10ˣ suffix: consumes E, optional minus, digits; returns the exponent.
+  function expValue(): number {
+    i++; // E
+    let sign = '';
+    if (peek() === '-') { sign = '-'; i++; }
+    let d = '';
+    while (isDigit(peek())) d += tokens[i++];
+    if (d === '') throw syntax();
+    return parseInt(`${sign}${d}`, 10);
+  }
+
+  // Constants, Ans and groups also accept a ×10ˣ suffix: Ans×10^2, π×10^3, (1+2)×10^2
+  const withExp = (v: number) => (peek() === 'E' ? parseFloat(`${v}e${expValue()}`) : v);
 
   function group(): number {
     const v = expr();
@@ -141,10 +147,10 @@ export function evaluate(tokens: Token[], ctx: Ctx): number {
     const t = peek();
     if (t === undefined) throw syntax();
     if (isDigit(t) || t === '.') return number();
-    if (t === 'pi') { i++; return Math.PI; }
-    if (t === 'e') { i++; return Math.E; }
-    if (t === 'ans') { i++; return ctx.ans; }
-    if (t === '(') { i++; return group(); }
+    if (t === 'pi') { i++; return withExp(Math.PI); }
+    if (t === 'e') { i++; return withExp(Math.E); }
+    if (t === 'ans') { i++; return withExp(ctx.ans); }
+    if (t === '(') { i++; return withExp(group()); }
     if (t === '-') { i++; return -atom(); }
     throw syntax();
   }
