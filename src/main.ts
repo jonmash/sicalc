@@ -210,6 +210,10 @@ window.addEventListener('keydown', (e) => {
 buildKeys();
 render();
 
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !import.meta.env.DEV) {
-  navigator.serviceWorker.register('./sw.js').catch(() => { /* offline cache is optional */ });
+// Offline cache is optional. In a sandboxed iframe (e.g. tools.brinceng.com) merely reading
+// navigator.serviceWorker throws a SecurityError synchronously, so guard the access too.
+if (location.protocol.startsWith('http') && !import.meta.env.DEV) {
+  try {
+    navigator.serviceWorker?.register('./sw.js').catch(() => { /* ignore */ });
+  } catch { /* service workers unavailable here */ }
 }
